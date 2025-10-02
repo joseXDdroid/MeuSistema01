@@ -15,87 +15,129 @@ import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
+import java.io.IOException;
+import java.util.Optional;
+
 public class ControllerLogin {
 
-	@FXML
-	private Button btnEntrar;
+    @FXML
+    private Button btnEntrar;
 
-	@FXML
-	private Button btnSair;
+    @FXML
+    private Button btnSair;
 
-	@FXML
-	private PasswordField edtSenha;
+    @FXML
+    private PasswordField edtSenha;
 
-	@FXML
-	private TextField edtUsuario;
+    @FXML
+    private TextField edtUsuario;
 
-	@FXML
-	private CheckBox mSenha;
+    @FXML
+    private CheckBox mSenha;
 
-	@FXML
-	private TextField senhaVisivel;
+    @FXML
+    private TextField senhaVisivel;
 
-	public void close() {
-		Alert alerta = new Alert(Alert.AlertType.CONFIRMATION);
-		alerta.setTitle("Confirmação");
-		alerta.setHeaderText("Deseja realmente sair?");
-		alerta.setContentText("Clique em Sim para fechar o sistema.");
+    public void close() {
+        Alert alerta = new Alert(Alert.AlertType.CONFIRMATION);
+        alerta.setTitle("Confirmação");
+        alerta.setHeaderText("Deseja realmente sair?");
+        alerta.setContentText("Clique em Sim para fechar o sistema.");
 
-		ButtonType botaoSim = new ButtonType("Sim");
-		ButtonType botaoNao = new ButtonType("Não", ButtonBar.ButtonData.CANCEL_CLOSE);
+        ButtonType botaoSim = new ButtonType("Sim");
+        ButtonType botaoNao = new ButtonType("Não", ButtonBar.ButtonData.CANCEL_CLOSE);
 
-		alerta.getButtonTypes().setAll(botaoSim, botaoNao);
+        alerta.getButtonTypes().setAll(botaoSim, botaoNao);
 
-		ButtonType resultado = alerta.showAndWait().orElse(botaoNao);
+        Optional<ButtonType> resultado = alerta.showAndWait();
 
-		if (resultado == botaoSim) {
-			System.exit(0);
-		}
-	}
+        if (resultado.isPresent() && resultado.get() == botaoSim) {
+            System.exit(0);
+        }
+    }
 
-	public void login() {
-		String usuario = edtUsuario.getText();
-		String senha = mSenha.isSelected() ? senhaVisivel.getText() : edtSenha.getText();
-		loginComCredenciais(usuario, senha);
-	}
+    @FXML
+    public void login() {
+        String usuario = edtUsuario.getText().trim();
+        String senha = mSenha.isSelected() ? senhaVisivel.getText() : edtSenha.getText();
 
-	public void pe() {
-		loginComCredenciais("1", "1");
-	}
+        if (usuario.isEmpty() || senha.isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Aviso");
+            alert.setHeaderText("Campos vazios");
+            alert.setContentText("Por favor, preencha o usuário e a senha.");
+            alert.showAndWait();
+            return;
+        }
 
-	private void loginComCredenciais(String usuario, String senha) {
-		try {
-			UsuarioDAO usuarioDAO = new UsuarioDAO();
-			if (usuarioDAO.autenticar(usuario, senha)) {
-				btnEntrar.getScene().getWindow().hide();
-				Parent root = FXMLLoader.load(getClass().getResource("main.FXML"));
-				Stage stage = new Stage();
-				Scene scene = new Scene(root);
-				stage.initStyle(StageStyle.TRANSPARENT);
-				stage.setScene(scene);
-				stage.setTitle("Sistema - ");
-				stage.show();
-				stage.setMaximized(true);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+        loginComCredenciais(usuario, senha);
+    }
 
-	@FXML
-	void mS() {
-		boolean mostrar = mSenha.isSelected();
+    private void loginComCredenciais(String usuario, String senha) {
+        try {
+            UsuarioDAO usuarioDAO = new UsuarioDAO();
+            boolean autenticado = usuarioDAO.autenticar(usuario, senha);
 
-		senhaVisivel.setVisible(mostrar);
-		senhaVisivel.setManaged(mostrar);
+            if (autenticado) {
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Login Bem-Sucedido");
+                alert.setHeaderText(null);
+                alert.setContentText("Bem-vindo, " + usuario + "! Login realizado com sucesso.");
+                alert.showAndWait();
 
-		edtSenha.setVisible(!mostrar);
-		edtSenha.setManaged(!mostrar);
+                btnEntrar.getScene().getWindow().hide(); // Fecha a janela de login
 
-		if (mostrar) {
-			senhaVisivel.setText(edtSenha.getText());
-		} else {
-			edtSenha.setText(senhaVisivel.getText());
-		}
-	}
+                Parent root = FXMLLoader.load(getClass().getResource("main.fxml"));
+                Stage stage = new Stage();
+                Scene scene = new Scene(root);
+                stage.initStyle(StageStyle.TRANSPARENT);
+                stage.setScene(scene);
+                stage.setTitle("Sistema - " + usuario);
+                stage.setMaximized(true);
+                stage.show();
+            } else {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Erro no Login");
+                alert.setHeaderText("Usuário ou senha inválidos");
+                alert.setContentText("O login não foi realizado. Verifique suas credenciais.");
+                alert.showAndWait();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Erro");
+            alert.setHeaderText("Erro ao abrir a tela principal");
+            alert.setContentText(e.getMessage());
+            alert.showAndWait();
+        } catch (Exception e) {
+            e.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Erro");
+            alert.setHeaderText("Erro inesperado");
+            alert.setContentText(e.getMessage());
+            alert.showAndWait();
+        }
+    }
+
+    @FXML
+    void mS() {
+        boolean mostrar = mSenha.isSelected();
+
+        senhaVisivel.setVisible(mostrar);
+        senhaVisivel.setManaged(mostrar);
+
+        edtSenha.setVisible(!mostrar);
+        edtSenha.setManaged(!mostrar);
+
+        if (mostrar) {
+            senhaVisivel.setText(edtSenha.getText());
+        } else {
+            edtSenha.setText(senhaVisivel.getText());
+        }
+    }
+
+    @FXML
+    void pe() {
+        loginComCredenciais("1", "1");
+    }
 }
