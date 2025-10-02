@@ -67,7 +67,6 @@ public class ControllerCadUsuario {
 
 		alerta.getButtonTypes().setAll(botaoSim, botaoNao);
 
-		// Espera a resposta do usuário
 		ButtonType resultado = alerta.showAndWait().orElse(botaoNao);
 
 		if (resultado == botaoSim) {
@@ -75,8 +74,21 @@ public class ControllerCadUsuario {
 		}
 	}
 
+	// NOVO método para verificar se operação está em andamento
+	private boolean verificarOperacaoEmAndamento(String acaoDesejada) {
+		if (modoAtual != ModoOperacao.NENHUM) {
+			mostrarErro("Operação pendente", "Finalize a operação atual antes de " + acaoDesejada + ".");
+			return false;
+		}
+		return true;
+	}
+
 	@FXML
 	private void prepararCriacao() {
+		// Verifica se pode iniciar criação
+		if (!verificarOperacaoEmAndamento("iniciar uma nova criação"))
+			return;
+
 		modoAtual = ModoOperacao.CRIAR;
 		limparCampos();
 		habilitarCampos(true);
@@ -84,6 +96,9 @@ public class ControllerCadUsuario {
 
 	@FXML
 	private void prepararEdicao() {
+		if (!verificarOperacaoEmAndamento("iniciar uma edição"))
+			return;
+
 		if (usuarioSelecionado == null) {
 			mostrarAlerta("Atenção", "Selecione um usuário para editar.");
 			return;
@@ -95,6 +110,9 @@ public class ControllerCadUsuario {
 
 	@FXML
 	private void prepararExclusao() {
+		if (!verificarOperacaoEmAndamento("iniciar uma exclusão"))
+			return;
+
 		if (usuarioSelecionado == null) {
 			mostrarAlerta("Atenção", "Selecione um usuário para excluir.");
 			return;
